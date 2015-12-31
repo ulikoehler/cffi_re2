@@ -4,6 +4,7 @@
 #include <vector>
 
 using namespace std;
+using namespace re2;
 
 typedef struct {
     bool hasMatch;
@@ -36,14 +37,14 @@ typedef struct {
 /**
  * Lookup table that maps the Python anchor arg to actual anchors.
  */
-static const re2::RE2::Anchor anchorLUT[] = {
-    re2::RE2::UNANCHORED, re2::RE2::ANCHOR_BOTH, re2::RE2::ANCHOR_START};
+static const RE2::Anchor anchorLUT[] = {
+    RE2::UNANCHORED, RE2::ANCHOR_BOTH, RE2::ANCHOR_START};
 
 /**
  * Create arg array from StringPiece array.
  * Caller must deallocate args with delete[]
  */
-RE2::Arg* stringPiecesToArgs(re2::StringPiece* spc, int n) {
+RE2::Arg* stringPiecesToArgs(StringPiece* spc, int n) {
     RE2::Arg* args = new RE2::Arg[n];
     for (int i = 0; i < n; ++i) {
         args[i] = &spc[i];
@@ -55,7 +56,7 @@ RE2::Arg* stringPiecesToArgs(re2::StringPiece* spc, int n) {
  * Copy a StringPiece array to a C string list,
  * each level of which is allocated using new[]
  */
-char** copyGroups(const re2::StringPiece* groupsSrc, int numGroups) {
+char** copyGroups(const StringPiece* groupsSrc, int numGroups) {
     char** groups = new char*[numGroups];
     for (int i = 0; i < numGroups; ++i) {
         char* group = new char[groupsSrc[i].size() + 1];
@@ -67,13 +68,13 @@ char** copyGroups(const re2::StringPiece* groupsSrc, int numGroups) {
     return groups;
 }
 
-extern "C" {
-    re2::RE2* RE2_new(const char* pattern) {
-        re2::RE2* ptr = new re2::RE2(pattern, re2::RE2::Quiet);
+//extern "C" {
+    RE2* RE2_new(const char* pattern) {
+        RE2* ptr = new RE2(pattern, RE2::Quiet);
         return ptr;
     }
 
-    int NumCapturingGroups(re2::RE2* re_obj) {
+    int NumCapturingGroups(RE2* re_obj) {
         return re_obj->NumberOfCapturingGroups();
     }
 
@@ -105,12 +106,12 @@ extern "C" {
         }
     }
 
-    REMultiMatchResult FindAllMatches(re2::RE2* re_obj, const char* dataArg, int anchorArg) {
-        re2::StringPiece data(dataArg);
+    REMultiMatchResult FindAllMatches(RE2* re_obj, const char* dataArg, int anchorArg) {
+        StringPiece data(dataArg);
         if(anchorArg >= 2) {
             anchorArg = 0; //Should not happen
         }
-        re2::RE2::Anchor anchor = anchorLUT[anchorArg];
+        RE2::Anchor anchor = anchorLUT[anchorArg];
         //Initialize return arg
         REMultiMatchResult ret;
         ret.numMatches = 0;
@@ -122,13 +123,13 @@ extern "C" {
         //Allocate temporary match array
         int nmatch = 1 + ret.numGroups;
         //We don't know the size of this in advance, so we'll need to allocate now
-        vector<re2::StringPiece*> allMatches;
+        vector<StringPiece*> allMatches;
         /**
          * Iterate over all non-overlapping (!) matches
          */
         while(true) {
             //Perform match
-            re2::StringPiece* matchTmp = new re2::StringPiece[nmatch];
+            StringPiece* matchTmp = new StringPiece[nmatch];
             bool hasMatch = re_obj->Match(data, pos, endidx,
                  anchor, matchTmp, nmatch);
             if(!hasMatch) {
@@ -162,18 +163,18 @@ extern "C" {
     }
 
 
-    REMatchResult FindSingleMatch(re2::RE2* re_obj, const char* dataArg, bool fullMatch) {
-        re2::StringPiece data(dataArg);
+    REMatchResult FindSingleMatch(RE2* re_obj, const char* dataArg, bool fullMatch) {
+        StringPiece data(dataArg);
         REMatchResult ret;
         ret.numGroups = re_obj->NumberOfCapturingGroups();
         //Declare group target array
-        re2::StringPiece* groups = new re2::StringPiece[ret.numGroups];
+        StringPiece* groups = new StringPiece[ret.numGroups];
         RE2::Arg* args = stringPiecesToArgs(groups, ret.numGroups);
         //Perform either
         if(fullMatch) {
-            ret.hasMatch = re2::RE2::FullMatchN(data, *re_obj, &args, ret.numGroups);
+            ret.hasMatch = RE2::FullMatchN(data, *re_obj, &args, ret.numGroups);
         } else {
-            ret.hasMatch = re2::RE2::PartialMatchN(data, *re_obj, &args, ret.numGroups);
+            ret.hasMatch = RE2::PartialMatchN(data, *re_obj, &args, ret.numGroups);
         }
         //Copy groups
         if(ret.hasMatch) {
@@ -188,15 +189,15 @@ extern "C" {
         return ret;
     }
 
-    void RE2_delete(re2::RE2* re_obj) {
+    void RE2_delete(RE2* re_obj) {
         delete re_obj;
     }
 
-    string* RE2_GlobalReplace(re2::RE2* re_obj, const char* str, const char* rewrite) {
+    string* RE2_GlobalReplace(RE2* re_obj, const char* str, const char* rewrite) {
         string* ptr_s = new string(str);
-        re2::StringPiece sp(rewrite);
+        StringPiece sp(rewrite);
 
-        re2::RE2::GlobalReplace(ptr_s, *re_obj, sp);
+        RE2::GlobalReplace(ptr_s, *re_obj, sp);
         return ptr_s;
     }
 
@@ -211,7 +212,7 @@ extern "C" {
         delete ptr;
     }
 
-    const char* get_error_msg(re2::RE2* re_obj) {
+    const char* get_error_msg(RE2* re_obj) {
         if(!re_obj) {
             return "";
         }
@@ -219,11 +220,10 @@ extern "C" {
         return get_c_str(ptr_s);
     }
     
-    bool ok(re2::RE2* re_obj) {
+    bool ok(RE2* re_obj) {
         if(!re_obj) {
             return false;
         }
         return re_obj->ok();
     }
-
-}
+//}

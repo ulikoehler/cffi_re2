@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 #encoding=utf-8
-
-__version__ = '0.1.4'
-
 import cffi
 import imp
 
@@ -10,46 +7,21 @@ import pkg_resources
 import os
 import re
 import six
+from _cffi_re2 import ffi
 
-dirname = pkg_resources.resource_filename('cffi_re2', '')
-dirname = os.path.abspath(os.path.join(dirname, '..'))
-import glob
-search_string = os.path.join(dirname, '_cre2*.so')
-flist = glob.glob(search_string)
+soname = pkg_resources.resource_filename('cffi_re2', '_cre2')
+#dirname = os.path.abspath(os.path.join(dirname, '..'))
+#import glob
+#search_string = os.path.join(dirname, '_cre2*.so')
+#flist = glob.glob(search_string)
+#
+#libre2 = None
+#if flist:
+#    soname = flist[0]
+#
 
-libre2 = None
-if flist:
-    soname = flist[0]
-    ffi = cffi.FFI()
-
-    ffi.cdef('''
-    typedef struct {
-        bool hasMatch;
-        int numGroups;
-        char** groups;
-    } REMatchResult;
-
-    typedef struct {
-        int numMatches;
-        int numGroups;
-        char*** groupMatches;
-    } REMultiMatchResult;
-
-    void FreeREMatchResult(REMatchResult mr);
-    void FreeREMultiMatchResult(REMultiMatchResult mr);
-
-    void* RE2_new(const char* pattern);
-    REMatchResult FindSingleMatch(void* re_obj, const char* data, bool fullMatch);
-    REMultiMatchResult FindAllMatches(void* re_obj, const char* data, int anchorArg);
-    void RE2_delete(void* re_obj);
-    void RE2_delete_string_ptr(void* ptr);
-    void* RE2_GlobalReplace(void* re_obj, const char* str, const char* rewrite);
-    const char* get_c_str(void* ptr_str);
-    const char* get_error_msg(void* re_obj);
-    bool ok(void* re_obj);
-    ''')
-
-    libre2 = ffi.dlopen(soname)
+#ffi = cffi.FFI()
+#libre2 = ffi.dlopen(soname)
 
 class MatchObject(object):
     def __init__(self, re, groups):
