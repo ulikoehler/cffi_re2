@@ -8,8 +8,11 @@ import os
 import re
 import six
 from _cffi_re2 import ffi
+from _cffi_re2 import lib as libre2
 
-soname = pkg_resources.resource_filename('cffi_re2', '_cre2')
+with open("foo.txt","w") as of:
+    of.write(str(libre2.__dict__))
+
 #dirname = os.path.abspath(os.path.join(dirname, '..'))
 #import glob
 #search_string = os.path.join(dirname, '_cre2*.so')
